@@ -1,19 +1,16 @@
 AWSTemplateFormatVersion: 2010-09-09
-Transform: 'AWS::Serverless-2016-10-31'
-
-Description: "update website visitor counter exposed in API Gateway REST API from DynamoDB"
-
-Resources: 
+Transform: AWS::Serverless-2016-10-31
+Description: update website visitor counter exposed in API Gateway REST API from DynamoDB
+Resources:
   VisitorCounterTbl:
     Type: AWS::Serverless::SimpleTable
     Properties:
       PrimaryKey:
         Name: website_id
         Type: String
-      ProvisionedThroughput: 
+      ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
-
   GetCounterValueFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -21,17 +18,13 @@ Resources:
       MemorySize: 128
       Runtime: python3.7
       Timeout: 3
-      InlineCode: |
-        import json
-        import boto3
-
-        def lambda_handler(event, context):
-          return "Hello World"
-
-
+      InlineCode: "import json\nimport boto3\n\ndef lambda_handler(event, context):\n\
+        \  return \"Hello World\"\n"
+      CodeUri: GetCounterValueFunction
 Outputs:
   DynamodbTableName:
-    Value: !Ref VisitorCounterTbl 
+    Value:
+      Ref: VisitorCounterTbl
   lambdaFunctionName:
-    Value: !Ref GetCounterValueFunction
-
+    Value:
+      Ref: GetCounterValueFunction
