@@ -20,7 +20,25 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 
+  lambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 
+      MemorySize: 128
+      Role: role-arn
+      Runtime: python3.7
+      Timeout: 3
+      Code: 
+        ZipFile: |
+          import json
+          import boto3
+
+          def lambda_handler(event, context):
+            return "Hello World"
+
 Outputs:
   DynamodbTable-Name:
     Value: !GetAtt dynamodbTable.TableName
+  lambdaFunction-Name:
+    Value: !GetAtt lambdaFunction.FunctionName
 
