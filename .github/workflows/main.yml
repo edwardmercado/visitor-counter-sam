@@ -19,38 +19,6 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-
-    # Runs a single command using the runners shell
-    - name: Run a one-line script
-      run: echo Hello, world!
-
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
-
-    - name: "Configure AWS Credentials"
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         # AWS Session Token
-#         aws-session-token: # optional
-        # AWS Region, e.g. us-east-2
-        aws-region: ${{ secrets.AWS_REGION }}
-        # Whether to set the AWS account ID for these credentials as a secret value, so that it is masked in logs. Valid values are 'true' and 'false'. Defaults to true
-#         mask-aws-account-id: # optional
-#         # Use the provided credentials to assume an IAM role and configure the Actions environment with the assumed role credentials rather than with the provided credentials
-#         role-to-assume: # optional
-#         # Role duration in seconds (default: 6 hours)
-#         role-duration-seconds: # optional
-#         # Role session name (default: GitHubActions)
-#         role-session-name: # optional
-#         # The external ID of the role to assume
-#         role-external-id: # optional
         
     - name: "Configure AWS Credentials"
       uses: aws-actions/configure-aws-credentials@v1
@@ -74,15 +42,20 @@ jobs:
 #         # The external ID of the role to assume
 #         role-external-id: # optional
         
-    - name: AWS SAM GitHub Actions
+    - name: sam validate
       uses: youyo/aws-sam-action@v1.0.0
       with:
-        # AWS SAM version to install.
-        #sam_version: # optional, default is latest
-        # AWS SAM subcommand to execute.
-        sam_command: |
-          sam validate
-          sam build
-          sam deploy
+        sam_command: validate
+
+    - name: sam build
+      uses: youyo/aws-sam-action@v1.0.0
+      with:
+        sam_command: build
+
+    - name: sam deploy
+      uses: youyo/aws-sam-action@v1.0.0
+      with:
+        sam_command: deploy
+      
         # Whether or not to comment on pull requests.
         #actions_comment: # optional
