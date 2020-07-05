@@ -13,3 +13,4 @@ def lambda_handler(event, context):
             'current_counter': 1
         }  
     )
+    print("let's try if it really works")
