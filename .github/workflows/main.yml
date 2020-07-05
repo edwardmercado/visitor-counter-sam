@@ -30,8 +30,7 @@ jobs:
         echo Add other actions to build,
         echo test, and deploy your project.
         
-        
-    - name: "Configure AWS Credentials" Action For GitHub Actions
+    - name: "Configure AWS Credentials"
       uses: aws-actions/configure-aws-credentials@v1
       with:
         # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
