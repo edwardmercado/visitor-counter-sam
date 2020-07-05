@@ -1,12 +1,22 @@
-AWSTemplateFormatVersion: 2010-09-09
-Transform: 'AWS::Serverless-2016-10-31'
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 
 Description: "update website visitor counter exposed in API Gateway REST API from DynamoDB"
+
+Globals:
+  Function:
+    Runtime: python3.7
+  Api:
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
 
 Resources: 
   VisitorCounterTbl:
     Type: AWS::Serverless::SimpleTable
     Properties:
+      TableName: visitor-count-table
       PrimaryKey:
         Name: website_id
         Type: String
@@ -17,21 +27,69 @@ Resources:
   GetCounterValueFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: read-write-visitor-function
+      CodeUri: src/
       Handler: index.lambda_handler
       MemorySize: 128
       Runtime: python3.7
       Timeout: 3
-      InlineCode: |
-        import json
-        import boto3
+      # Role: !Sub arn:aws:iam::${AWS::AccountId}:role/service-role/${!GetAtt GetCounterValueFunctionRole.RoleName}
+      Role: arn:aws:iam::836373823767:role/service-role/get-current-counter-value-role-nk940r0z
+      Policies:
+      # Give DynamoDB Full Access to your Lambda Function
+      - AmazonDynamoDBFullAccess
+  
+  UpdateCounterValueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: write-visitor-function
+      CodeUri: src/
+      Handler: update-counter.lambda_handler
+      MemorySize: 128
+      Runtime: python3.7
+      Role: arn:aws:iam::836373823767:role/service-role/get-current-counter-value-role-nk940r0z
+      Timeout: 3
+      Events:
+        Endpoint:
+          Type: Api
+          Properties:
+            Path: /update
+            Method: GET
+            
 
-        def lambda_handler(event, context):
-          return "Hello World"
+  
+        
+        
+  # GetCounterValueFunctionRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: "AllowGetItemAndUpdateItemPolicy"
+  #     Path: "/"
+  #     AssumeRolePolicyDocument: 
+  #       Version: '2012-10-17'
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - lambda.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - !Ref AllowGetItemAndUpdateItemPolicy
+
+  # AllowGetItemAndUpdateItemPolicy:
+  #   Type: AWS::IAM::ManagedPolicy
+  #   Properties:
+  #     PolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         -
+  #           Sid: AllowGetItemAndUpdateItem
+  #           Effect: Allow
+  #           Action:
+  #             - dynamodb:GetItem
+  #             - dynamodb:UpdateItem
+  #           Resource: "*"
 
 
-Outputs:
-  DynamodbTableName:
-    Value: !Ref VisitorCounterTbl 
-  lambdaFunctionName:
-    Value: !Ref GetCounterValueFunction
 
