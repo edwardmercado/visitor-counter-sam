@@ -1,10 +1,11 @@
 import json
 import boto3
 from decimal import Decimal
-from boto3.dynamodb.conditions import Key
+
+Table_Name = 'visitor-count-table'
 
 client = boto3.resource('dynamodb')
-table = client.Table('visitor-count-table')
+table = client.Table(Table_Name)
 
 def lambda_handler(event, context):
     response = table.put_item(
