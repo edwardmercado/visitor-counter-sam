@@ -42,12 +42,14 @@ jobs:
 #         # The external ID of the role to assume
 #         role-external-id: # optional
 
+    - name: upgrade and install boto3
+    - run: pip install --upgrade --user boto3
+
     - name: run python test
       uses: actions/setup-python@v2
       with:
           python-version: '3.7'
           architecture: 'x64'
-    - run: pip install --upgrade --user boto3
     - run: python src/test_resource.py
 
     - name: sam validate
