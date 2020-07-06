@@ -41,12 +41,13 @@ jobs:
 #         role-session-name: # optional
 #         # The external ID of the role to assume
 #         role-external-id: # optional
+
     - name: run python test
       uses: actions/setup-python@v2
       with:
           python-version: '3.7'
           architecture: 'x64'
-      - run: python src/test_resource.py
+    - run: python src/test_resource.py
 
     - name: sam validate
       uses: youyo/aws-sam-action@v1.0.0
