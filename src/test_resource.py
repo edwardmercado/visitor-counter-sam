@@ -1,5 +1,4 @@
 import unittest
-import boto3
 from index import client, table, Table_Name
 
 class TestResources(unittest.TestCase):
