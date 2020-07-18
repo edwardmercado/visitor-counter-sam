@@ -11,15 +11,15 @@ Globals:
       AllowOrigin: '''*'''
 Resources:
   VisitorCounterTbl:
-    Type: AWS::Serverless::SimpleTable
+    Type: AWS::DynamoDB::Table
     Properties:
-      TableName: visitor-count-table
-      PrimaryKey:
-        Name: website_id
-        Type: String
-      ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: website_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: website_id
+        KeyType: HASH
   GetCounterValueFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -29,44 +29,71 @@ Resources:
       MemorySize: 128
       Runtime: python3.7
       Timeout: 3
-      Role: arn:aws:iam::836373823767:role/service-role/get-current-counter-value-role-nk940r0z
-      Policies:
-      - AmazonDynamoDBFullAccess
+      Role:
+        Fn::GetAtt:
+        - LambdaRole
+        - Arn
   UpdateCounterValueFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: write-visitor-function
-      CodeUri: src/
-      Handler: update-counter.lambda_handler
+      CodeUri: UpdateCounterValueFunction
+      Handler: updateCounter.lambda_handler
       MemorySize: 128
       Runtime: python3.7
       Role:
         Fn::GetAtt:
-        - GetCounterValueFunctionRole
+        - LambdaRole
         - Arn
       Timeout: 3
+      Environment:
+        Variables:
+          DB_NAME:
+            Fn::Select:
+            - 1
+            - Fn::Split:
+              - /
+              - Fn::GetAtt:
+                - VisitorCounterTbl
+                - Arn
+          ITEM_CREATED: false
       Events:
         Endpoint:
           Type: Api
           Properties:
             Path: /update
             Method: GET
-      Code: UpdateCounterValueFunction
-  GetCounterValueFunctionRole:
+  LambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      Path: null
-      AssumeRolePolicyDocument: null
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
       Policies:
-      - PolicyName: root
+      - PolicyName: LambdaBasicExecutionRole
         PolicyDocument:
-          Version: '2012-10-17'
+          Version: 2012-10-17
           Statement:
           - Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
             Action:
-            - logs: CreateLogStream
-            - logs: PutLogEvents
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: '*'
+      - PolicyName: DynamoDBActions
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:DescribeTable
+            - dynamodb:UpdateItem
             Resource: '*'

@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-
 Description: "update website visitor counter exposed in API Gateway REST API from DynamoDB"
-
 Globals:
   Function:
     Runtime: python3.7
@@ -13,17 +11,31 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources: 
-  VisitorCounterTbl:
-    Type: AWS::Serverless::SimpleTable
-    Properties:
-      TableName: visitor-count-table
-      PrimaryKey:
-        Name: website_id
-        Type: String
-      ProvisionedThroughput: 
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+  # VisitorCounterTbl:
+  #   Type: AWS::Serverless::SimpleTable
+  #   Properties:
+  #     TableName: visitor-count-table
+  #     PrimaryKey:
+  #       Name: website_id
+  #       Type: String
+  #     ProvisionedThroughput: 
+  #       ReadCapacityUnits: 1
+  #       WriteCapacityUnits: 1
 
+  VisitorCounterTbl:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - 
+          AttributeName: "website_id"
+          AttributeType: "S"
+      KeySchema:
+        - 
+          AttributeName: "website_id"
+          KeyType: "HASH"
+
+  #Lambda function the write the initial value in dynamoDB
   GetCounterValueFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -33,81 +45,83 @@ Resources:
       MemorySize: 128
       Runtime: python3.7
       Timeout: 3
-      # Role: !Sub arn:aws:iam::${AWS::AccountId}:role/service-role/${!GetAtt GetCounterValueFunctionRole.RoleName}
-      Role: arn:aws:iam::836373823767:role/service-role/get-current-counter-value-role-nk940r0z
-      Policies:
-      # Give DynamoDB Full Access to your Lambda Function
-      - AmazonDynamoDBFullAccess
+      Role: !GetAtt LambdaRole.Arn
   
   UpdateCounterValueFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: write-visitor-function
       CodeUri: src/
-      Handler: update-counter.lambda_handler
+      Handler: updateCounter.lambda_handler
       MemorySize: 128
       Runtime: python3.7
-      Role: !GetAtt GetCounterValueFunctionRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       Timeout: 3
+      Environment:
+        Variables:
+          DB_NAME: !Select [1, !Split ['/', !GetAtt VisitorCounterTbl.Arn]]
       Events:
         Endpoint:
           Type: Api
           Properties:
             Path: /update
             Method: GET
-                 
-  GetCounterValueFunctionRole:
-    Type: AWS::IAM::Role
+
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
     Properties:
-      Path:
-      AssumeRolePolicyDocument: 
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
       Policies:
-        - 
-         PolicyName: "root"
-         PolicyDocument:
-           Version: "2012-10-17"
-           Statement:
-              - 
-                Effect: "Allow"
-                Principal:
-                  Service:
-                    - lambda.amazonaws.com
-                    
+        - PolicyName: LambdaBasicExecutionRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
                 Action:
-                  - logs: "CreateLogStream"
-                  - logs: "PutLogEvents"
-                Resource: "*"      
-        
-  # GetCounterValueFunctionRole:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Resource: '*'
+        - PolicyName: DynamoDBActions
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:DescribeTable
+                - dynamodb:UpdateItem
+                Resource: '*'
+
+  # LambdaRole:
   #   Type: AWS::IAM::Role
   #   Properties:
-  #     RoleName: "AllowGetItemAndUpdateItemPolicy"
-  #     Path: "/"
   #     AssumeRolePolicyDocument: 
-  #       Version: '2012-10-17'
-  #       Statement:
-  #       - Effect: Allow
-  #         Principal:
-  #           Service:
-  #           - lambda.amazonaws.com
-  #         Action:
-  #         - sts:AssumeRole
-  #     ManagedPolicyArns:
-  #       - !Ref AllowGetItemAndUpdateItemPolicy
-
-  # AllowGetItemAndUpdateItemPolicy:
-  #   Type: AWS::IAM::ManagedPolicy
-  #   Properties:
-  #     PolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         -
-  #           Sid: AllowGetItemAndUpdateItem
+  #       Version: 2012-10-17
+  #         Statement:
   #           Effect: Allow
+  #           Principal:
+  #             Service:
+  #             - lambda.amazonaws.com
   #           Action:
-  #             - dynamodb:GetItem
-  #             - dynamodb:UpdateItem
-  #           Resource: "*"
-
-
+  #             - 'sts:AssumeRole'
+  #     Path: /
+  #     Policies:
+  #       - PolicyName: root
+  #         PolicyDocument:
+  #           Version: 2012-10-17
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: 
+  #               - logs: "CreateLogStream"
+  #               - logs: "PutLogEvents"
 

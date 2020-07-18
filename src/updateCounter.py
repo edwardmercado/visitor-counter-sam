@@ -1,8 +1,9 @@
 import json
+import os
 import boto3
 from decimal import Decimal
 
-Table_Name = 'visitor-count-table'
+Table_Name = os.environ['DB_NAME']
 
 client = boto3.resource('dynamodb')
 table = client.Table(Table_Name)
@@ -14,16 +15,15 @@ class DecimalEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 def lambda_handler(event, context):
-    #Atomic updates on our current_counter
     updateValue = table.update_item(
         Key={
             'website_id': '12345'
         },
-        UpdateExpression = "set current_counter = current_counter + :val",
-        ExpressionAttributeValues={
-            ':val': Decimal(1)
+        UpdateExpression = "ADD current_counter :value",
+        ExpressionAttributeValues = {
+            ':value': 1
         },
-        ReturnValues="UPDATED_NEW"
+        ReturnValues = "UPDATED_NEW"
     )
     return {
         'statusCode' : 200,
@@ -32,6 +32,5 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'OPTIONS,GET'
         },
-        "body": json.dumps(updateValue,cls=DecimalEncoder)
+        "body": json.dumps(updateValue, cls=DecimalEncoder)
     };
-    
