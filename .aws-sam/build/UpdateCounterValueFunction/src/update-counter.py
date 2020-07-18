@@ -2,8 +2,10 @@ import json
 import boto3
 from decimal import Decimal
 
+Table_Name = 'visitor-count-table'
+
 client = boto3.resource('dynamodb')
-table = client.Table('visitor-count-table')
+table = client.Table(Table_Name)
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
