@@ -56,7 +56,6 @@ Resources:
               - Fn::GetAtt:
                 - VisitorCounterTbl
                 - Arn
-          ITEM_CREATED: false
       Events:
         Endpoint:
           Type: Api
@@ -85,6 +84,7 @@ Resources:
             Action:
             - logs:CreateLogStream
             - logs:PutLogEvents
+            - logs:CreateLogGroup
             Resource: '*'
       - PolicyName: DynamoDBActions
         PolicyDocument:

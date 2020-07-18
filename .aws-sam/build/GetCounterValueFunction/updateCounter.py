@@ -15,19 +15,26 @@ class DecimalEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 def lambda_handler(event, context):
-    putItemToDB()
-    #Atomic updates on our current_counter
     updateValue = table.update_item(
         Key={
             'website_id': '12345'
         },
-        UpdateExpression = "SET current_counter = current_counter + :val",
-        ConditionExpression = "attribute_exists(current_counter)",
-        ExpressionAttributeValues={
-            ':val': 1
+        UpdateExpression = "ADD current_counter :value",
+        ExpressionAttributeValues = {
+            ':value': 1
         },
-        ReturnValues="UPDATED_NEW"
+        ReturnValues = "UPDATED_NEW"
     )
+    
+    print(json.dumps(
+        {   
+            "DATE": updateValue['ResponseMetadata']['HTTPHeaders']['date'],
+            "Request Id": updateValue['ResponseMetadata']['RequestId'],
+            "RESULT": "Success",
+            "Visit Count": updateValue['Attributes']['current_counter']
+        }
+    , cls=DecimalEncoder))
+    
     return {
         'statusCode' : 200,
         'headers': {
@@ -37,13 +44,3 @@ def lambda_handler(event, context):
         },
         "body": json.dumps(updateValue, cls=DecimalEncoder)
     };
-    
-def putItemToDB():
-    table.put_item(
-        Item={
-            'website_id': '12345',
-            'current_counter': 0
-        },
-        ConditionExpression = "attribute_not_exists(current_counter)"
-    )
-    os.environ['ITEM_CREATED'] = TRUE

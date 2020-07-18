@@ -25,6 +25,16 @@ def lambda_handler(event, context):
         },
         ReturnValues = "UPDATED_NEW"
     )
+    
+    print(json.dumps(
+        {   
+            "DATE": updateValue['ResponseMetadata']['HTTPHeaders']['date'],
+            "Request Id": updateValue['ResponseMetadata']['RequestId'],
+            "RESULT": "Success",
+            "Visit Count": updateValue['Attributes']['current_counter']
+        }
+    , cls=DecimalEncoder))
+    
     return {
         'statusCode' : 200,
         'headers': {
