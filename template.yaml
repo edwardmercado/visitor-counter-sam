@@ -11,17 +11,6 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources: 
-  # VisitorCounterTbl:
-  #   Type: AWS::Serverless::SimpleTable
-  #   Properties:
-  #     TableName: visitor-count-table
-  #     PrimaryKey:
-  #       Name: website_id
-  #       Type: String
-  #     ProvisionedThroughput: 
-  #       ReadCapacityUnits: 1
-  #       WriteCapacityUnits: 1
-
   VisitorCounterTbl:
     Type: AWS::DynamoDB::Table
     Properties:
